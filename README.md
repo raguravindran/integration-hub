@@ -7,6 +7,7 @@ A real-time monitoring dashboard for enterprise integrations with drag-and-drop 
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
+- [Screenshots](#screenshots)
 - [Getting Started](#getting-started)
   - [Prerequisites](#prerequisites)
   - [Installation](#installation)
@@ -61,6 +62,16 @@ integration-hub/
 │   └── server.js       # Entry point
 └── package.json        # Project dependencies
 ```
+
+## Screenshots
+
+### Dashboard Home Page
+
+![IntegrationHub Dashboard Home](./misc/IntegrationHub_home.png)
+
+### Integrations Management Page
+
+![IntegrationHub Integrations Page](./misc/IntegrationsPage.png)
 
 ## Getting Started
 
