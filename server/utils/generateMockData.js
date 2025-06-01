@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+const { sequelize, connectDB } = require('../config/db');
 const Integration = require('../models/Integration');
 const Metric = require('../models/Metric');
 
@@ -7,16 +7,7 @@ const Metric = require('../models/Metric');
  * Run this script with: node utils/generateMockData.js
  */
 
-// Connect to MongoDB
-const connectDB = async () => {
-  try {
-    await mongoose.connect(process.env.MONGO_URI || 'mongodb://localhost:27017/integration-hub');
-    console.log('MongoDB connected for mock data generation');
-  } catch (err) {
-    console.error('MongoDB connection error:', err.message);
-    process.exit(1);
-  }
-};
+// Database connection is handled by the imported connectDB function
 
 // Sample integration types
 const integrationTypes = ['API', 'Database', 'File', 'Message Queue', 'Custom'];
@@ -47,7 +38,7 @@ const getRandomDate = (start, end) => {
 const createIntegrations = async (count) => {
   try {
     // Clear existing integrations
-    await Integration.deleteMany({});
+    await Integration.destroy({ where: {}, truncate: true });
     
     const integrations = [];
     
@@ -56,7 +47,8 @@ const createIntegrations = async (count) => {
       const destination = getRandomItem(destinations);
       const type = getRandomItem(integrationTypes);
       
-      const integration = new Integration({
+      // Using Sequelize create method instead of Mongoose's new Model and save
+      const integrationData = {
         name: `${source} to ${destination} Integration`,
         description: `Integration between ${source} and ${destination} for data synchronization`,
         type,
@@ -67,14 +59,14 @@ const createIntegrations = async (count) => {
           url: `https://api.example.com/${source.toLowerCase()}`,
           authType: 'oauth2'
         } : type === 'Database' ? {
-          connectionString: `mongodb://localhost:27017/${source.toLowerCase()}`,
-          dbType: 'mongodb'
+          connectionString: `jdbc:mariadb://localhost:3306/${source.toLowerCase()}`,
+          dbType: 'mariadb'
         } : {},
         createdBy: 'system',
         createdAt: getRandomDate(new Date(Date.now() - 90 * 24 * 60 * 60 * 1000), new Date())
-      });
+      };
       
-      const savedIntegration = await integration.save();
+      const savedIntegration = await Integration.create(integrationData);
       integrations.push(savedIntegration);
     }
     
@@ -90,7 +82,7 @@ const createIntegrations = async (count) => {
 const createMetrics = async (integrations, metricsPerIntegration) => {
   try {
     // Clear existing metrics
-    await Metric.deleteMany({});
+    await Metric.destroy({ where: {}, truncate: true });
     
     let totalMetrics = 0;
     
@@ -105,8 +97,9 @@ const createMetrics = async (integrations, metricsPerIntegration) => {
         const responseTime = getRandomInt(50, 2000); // 50ms to 2s
         const dataVolume = getRandomInt(1000, 1000000); // 1KB to 1MB
         
-        const metric = new Metric({
-          integrationId: integration._id,
+        // Using Sequelize create instead of Mongoose's new Model and save
+        const metricData = {
+          integrationId: integration.id,  // In Sequelize, it's 'id' not '_id'
           timestamp,
           status,
           responseTime,
@@ -118,9 +111,9 @@ const createMetrics = async (integrations, metricsPerIntegration) => {
             endpoint: integration.type === 'API' ? '/api/data' : null,
             records: getRandomInt(1, 1000)
           }
-        });
+        };
         
-        await metric.save();
+        await Metric.create(metricData);
         totalMetrics++;
       }
     }
@@ -136,6 +129,10 @@ const createMetrics = async (integrations, metricsPerIntegration) => {
 const generateMockData = async () => {
   try {
     await connectDB();
+    
+    // Make sure database tables are synced
+    await sequelize.sync();
+    console.log('MariaDB tables synced successfully');
     
     const integrations = await createIntegrations(10); // Create 10 integrations
     await createMetrics(integrations, 100); // Create 100 metrics per integration
