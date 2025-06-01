@@ -8,13 +8,13 @@ A real-time monitoring dashboard for enterprise integrations with drag-and-drop 
 - Drag-and-drop configuration of integration components
 - Detailed metrics and data visualization
 - WebSocket-based live updates
-- MongoDB for flexible data storage
+- MariaDB for reliable relational data storage
 
 ## Tech Stack
 
 - **Frontend**: React.js, Chart.js, React Beautiful DnD
 - **Backend**: Node.js, Express.js
-- **Database**: MongoDB
+- **Database**: MariaDB, Sequelize ORM
 - **Real-time Communication**: Socket.io
 
 ## Project Structure
@@ -44,7 +44,7 @@ integration-hub/
 ### Prerequisites
 
 - Node.js (v14+)
-- MongoDB (local or Atlas)
+- MariaDB (v10.6+)
 
 ### Installation
 
@@ -63,7 +63,11 @@ Create a `.env` file in the server directory with the following variables:
 
 ```
 PORT=5000
-MONGO_URI=mongodb://localhost:27017/integration-hub
+DB_NAME=integration_hub
+DB_USER=root
+DB_PASSWORD=
+DB_HOST=localhost
+DB_PORT=3306
 JWT_SECRET=your_jwt_secret_key
 CLIENT_URL=http://localhost:3000
 ```
@@ -99,6 +103,118 @@ This will start both the client and server concurrently:
 - `integrationUpdated` - When an integration is updated
 - `integrationDeleted` - When an integration is deleted
 - `metricCreated` - When a new metric is recorded
+
+## System Architecture
+
+### High-Level Architecture
+
+```
++------------------+            +------------------+            +------------------+
+|                  |            |                  |            |                  |
+|    Client        |  <------>  |    Server        |  <------>  |    Database      |
+|    (React)       |  HTTP/WS   |    (Node.js)     |   SQL      |    (MariaDB)     |
+|                  |            |                  |            |                  |
++------------------+            +------------------+            +------------------+
+        ^                             ^                               |
+        |                             |                               |
+        |                             |                               |
+        v                             v                               v
++------------------+            +------------------+        +------------------+
+|                  |            |                  |        |                  |
+|  UI Components  |            |    API Routes    |        |     Database     |
+|  & State Mgmt   |            |  & Controllers   |        |      Models      |
+|                  |            |                  |        |                  |
++------------------+            +------------------+        +------------------+
+```
+
+### Data Flow Diagram
+
+```
+   +----------------+           +----------------+          +----------------+
+   |                |           |                |          |                |
+   |   User Actions |---------->| API Endpoints  |--------->| Database       |
+   |                |           |                |          | Operations    |
+   +----------------+           +----------------+          +----------------+
+           |                           |                           |
+           v                           v                           v
+   +----------------+           +----------------+          +----------------+
+   |                |           |                |          |                |
+   | React State    |<----------| API Responses  |<---------| Data Results   |
+   | Update         |           |                |          |                |
+   +----------------+           +----------------+          +----------------+
+           |
+           |
+           v
+   +----------------+           +----------------+
+   |                |           |                |
+   | Real-time      |<----------| WebSocket      |
+   | UI Updates    |           | Events         |
+   |                |           |                |
+   +----------------+           +----------------+
+```
+
+### Component Interaction Flow
+
+```
++--------------------+      +--------------------+      +--------------------+
+|                    |      |                    |      |                    |
+|  Integration List  |----->|  Integration      |----->|  Metrics           |
+|  Component        |      |  Detail Component |      |  Charts Component |
+|                    |      |                    |      |                    |
++--------------------+      +--------------------+      +--------------------+
+         |                          |                          |
+         v                          v                          v
++--------------------+      +--------------------+      +--------------------+
+|                    |      |                    |      |                    |
+|  Integration Form |      |  WebSocket        |      |  Drag-and-Drop    |
+|  Component        |      |  Context          |      |  Container        |
+|                    |      |                    |      |                    |
++--------------------+      +--------------------+      +--------------------+
+         |                          |                          |
+         |                          |                          |
+         v                          v                          v
++--------------------------------------------------------------------+
+|                                                                    |
+|                         API Service Layer                          |
+|                                                                    |
++--------------------------------------------------------------------+
+```
+
+## Database Schema
+
+### Integrations Table
+
+| Column         | Type          | Description                          |
+|---------------|---------------|--------------------------------------|
+| id            | INT (PK)      | Primary key                          |
+| name          | VARCHAR(255)  | Integration name                     |
+| description    | TEXT          | Description of the integration      |
+| type          | ENUM          | API, Database, File, etc.            |
+| status        | ENUM          | Active, Inactive, Error              |
+| config        | JSON          | Configuration details                |
+| source        | VARCHAR(255)  | Source system                        |
+| destination   | VARCHAR(255)  | Destination system                   |
+| createdBy     | VARCHAR(255)  | User who created the integration    |
+| lastModified  | DATETIME      | Last modification timestamp         |
+| createdAt     | DATETIME      | Creation timestamp                  |
+| updatedAt     | DATETIME      | Update timestamp                    |
+
+### Metrics Table
+
+| Column         | Type          | Description                          |
+|---------------|---------------|--------------------------------------|
+| id            | INT (PK)      | Primary key                          |
+| integrationId | INT (FK)      | Foreign key to Integrations          |
+| timestamp     | DATETIME      | When the metric was recorded        |
+| status        | ENUM          | Success, Failure, Warning, Processing|
+| responseTime  | INT           | Response time in milliseconds       |
+| dataVolume    | INT           | Volume of data in bytes             |
+| errorMessage  | TEXT          | Error message if status is Failure  |
+| successCount  | INT           | Number of successful operations     |
+| failureCount  | INT           | Number of failed operations         |
+| metadata      | JSON          | Additional metric data              |
+| createdAt     | DATETIME      | Creation timestamp                  |
+| updatedAt     | DATETIME      | Update timestamp                    |
 
 ## License
 
