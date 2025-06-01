@@ -2,6 +2,29 @@
 
 A real-time monitoring dashboard for enterprise integrations with drag-and-drop configuration, data visualization, and metrics tracking.
 
+## Table of Contents
+
+- [Features](#features)
+- [Tech Stack](#tech-stack)
+- [Project Structure](#project-structure)
+- [Getting Started](#getting-started)
+  - [Prerequisites](#prerequisites)
+  - [Installation](#installation)
+  - [Configuration](#configuration)
+  - [Running the Application](#running-the-application)
+- [API Endpoints](#api-endpoints)
+  - [Integrations](#integrations)
+  - [Metrics](#metrics)
+- [WebSocket Events](#websocket-events)
+- [System Architecture](#system-architecture)
+  - [High-Level Architecture](#high-level-architecture)
+  - [Data Flow Diagram](#data-flow-diagram)
+  - [Component Interaction Flow](#component-interaction-flow)
+- [Database Schema](#database-schema)
+  - [Integrations Table](#integrations-table)
+  - [Metrics Table](#metrics-table)
+- [License](#license)
+
 ## Features
 
 - Real-time monitoring of integration status and performance
